@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pickle
+import joblib
 
 # Configuration de la page
 st.set_page_config(
@@ -12,21 +12,21 @@ st.set_page_config(
 # Fonction pour charger le modèle, le scaler et le PCA
 @st.cache_resource
 def load_models():
-    with open('model_rbf.pkl', 'rb') as file:
-        model = pickle.load(file)
-    with open('scaler.pkl', 'rb') as file:
-        scaler = pickle.load(file)
-    with open('pca_model.pkl', 'rb') as file:
-        pca = pickle.load(file)
-    return model, scaler, pca
+    try:
+        model = joblib.load('models/model_rbf.pkl')
+        scaler = joblib.load('models/scaler.pkl')
+        pca = joblib.load('models/pca_model.pkl')
+        return model, scaler, pca
+    except Exception as e:
+        st.error(f"⚠️ Erreur: {str(e)}")
+        st.info("Assurez-vous que les fichiers .joblib sont présents dans le répertoire")
+        return None, None, None
 
 def main():
     st.title('💰 Prédicteur de Prix Airbnb')
     
-    try:
-        model, scaler, pca = load_models()
-    except:
-        st.error("⚠️ Erreur: Assurez-vous que les fichiers model.pkl, scaler.pkl et pca_model.pkl sont présents")
+    model, scaler, pca = load_models()
+    if not model:
         return
 
     # Création de 3 colonnes pour une meilleure organisation
@@ -102,8 +102,7 @@ def main():
             'Review Scores Communication': [review_scores['Review Scores Communication']],
             'Review Scores Location': [review_scores['Review Scores Location']],
             'Review Scores Value': [review_scores['Review Scores Value']],
-            'Reviews per Month': [reviews_per_month],
-            'Price': [0]  # Ajouté car présent dans l'index mais sera ignoré pour la prédiction
+            'Reviews per Month': [reviews_per_month]
         })
 
         try:
